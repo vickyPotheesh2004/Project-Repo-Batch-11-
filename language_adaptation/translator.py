@@ -78,9 +78,12 @@ def translate_auto(text: str, source_lang: str, target_lang: str) -> str:
     if source_lang == target_lang:
         return text
     
-    # Try deep-translator first (Google Translate backend)
+    # Try deep-translator (Google) with retries
     if USE_DEEP_TRANSLATOR:
         try:
+            from deep_translator import MyMemoryTranslator
+            import time
+            
             # GoogleTranslator expects language codes like 'en', 'te', 'hi'
             translator = GoogleTranslator(source=source_lang, target=target_lang)
             
@@ -89,10 +92,35 @@ def translate_auto(text: str, source_lang: str, target_lang: str) -> str:
             translated_chunks = []
             
             for chunk in chunks:
-                res = translator.translate(chunk)
-                if res:
-                    translated_chunks.append(res)
-            
+                chunk_translated = False
+                
+                # Retry loop for Google Translator
+                for attempt in range(3):
+                    try:
+                        res = translator.translate(chunk)
+                        if res:
+                            translated_chunks.append(res)
+                            chunk_translated = True
+                            break
+                    except Exception:
+                        time.sleep(1) # Backoff
+                
+                # If Google fails, try MyMemory as secondary API fallback
+                if not chunk_translated:
+                    try:
+                        res = MyMemoryTranslator(source=source_lang, target=target_lang).translate(chunk)
+                        if res:
+                            translated_chunks.append(res)
+                            chunk_translated = True
+                    except Exception:
+                        pass
+                
+                # If both fail for a chunk, we could potentially use local model JUST for this chunk,
+                # but mixing models might look weird. For now we will rely on the main catch-all to switch entire mechanism?
+                # Actually, better to use local model for this chunk if API failed!
+                if not chunk_translated:
+                    raise Exception("Chunk translation failed")
+
             return " ".join(translated_chunks)
             
         except Exception as e:

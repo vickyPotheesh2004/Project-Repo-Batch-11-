@@ -1,0 +1,14 @@
+streamlit
+openai-whisper
+transformers
+sentence-transformers
+deep-translator
+indic-transliteration
+unidecode
+scikit-learn
+torch
+numpy
+pandas
+nltk
+watchdog
+sentencepiece
