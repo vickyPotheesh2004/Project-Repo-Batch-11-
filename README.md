@@ -11,36 +11,55 @@ Podcast AI is a powerful tool designed to transform raw audio content into struc
 ### 2. **Topic Segmentation**
 -   Automatically divides long audio files into coherent segments/topics.
 -   Uses semantic analysis to detect topic shifts, allowing for easy navigation through the content.
+-   Topics are displayed in **chronological order** by start time.
 
-### 3. **Abstractive Summarization**
+### 3. **Interactive Timeline Visualization**
+-   **Horizontal Bar Graph**: Visualizes podcast segments as a proportional bar graph using **Matplotlib**.
+-   **Color-Coded Segments**: Each topic has a distinct color for easy identification.
+-   **Click-to-Navigate**: Select any topic button to view its full details.
+-   **Time Markers**: Shows start/end times on the timeline axis.
+
+### 4. **Sentiment Analysis**
+-   **Scaled Scoring**: Sentiment displayed on a user-friendly **1-10 scale**.
+-   **Color-Coded Labels**: Positive (green), Neutral (orange), Negative (red).
+-   Uses **TextBlob** for sentiment polarity detection.
+
+### 5. **Abstractive Summarization**
 -   Generates concise, human-readable summaries for each topic.
 -   Follows a consistent *"This topic is about..."* format using **Flan-T5** and custom prompting.
 
-### 4. **Multi-Language Translation**
+### 6. **Multi-Language Translation**
 -   **Supports 10+ Languages**: Including Telugu, Hindi, Tamil, Kannada, Malayalam, Bengali, Marathi, Urdu, Arabic, Russian, and more.
 -   **Smart Chunking**: Handles long transcripts (>10,000 characters) without truncation or errors by intelligently splitting text.
 -   Powered by **`deep-translator`** (Google Translate backend) for reliable accuracy.
 
-### 5. **Localization (Romanization)**
+### 7. **Localization (Romanization)**
 -   **Readable Script**: Converts non-English translations (like Telugu or Hindi script) into readable English characters (Romanized).
--   **Standardized Format**: Uses **IAST** (International Alphabet of Sanskrit Transliteration) via **`indic-transliteration`** for phonetically accurate readability (e.g., *namaskāraṃ* instead of *nmskr*).
+-   **Standardized Format**: Uses **IAST** (International Alphabet of Sanskrit Transliteration) via **`indic-transliteration`** for phonetically accurate readability.
 -   **Dual Display**: Shows both the original translated script and the romanized text side-by-side.
 
-### 6. **Large File Support**
+### 8. **Large File Support**
 -   Optimized for large podcast episodes.
 -   Supports file uploads up to **4GB**.
 -   Visual file size indicator.
+
+### 9. **Adaptive UI Styling**
+-   **High Contrast Design**: Black-background boxes with white text for readability.
+-   **Clean Typography**: Consistent font families and professional presentation.
+-   **Responsive Layout**: Works well on various screen sizes.
 
 ---
 
 ## 🛠️ Tech Stack
 
 -   **Frontend**: [Streamlit](https://streamlit.io/)
+-   **Visualization**: [Matplotlib](https://matplotlib.org/)
 -   **AI/ML Models**: 
     -   Transcription: `openai/whisper`
     -   Summarization: `google/flan-t5-base`
     -   Translation: `deep-translator`
     -   Romanization: `indic-transliteration`
+    -   Sentiment: `textblob`
 -   **Backend Logic**: Python
 
 ---
@@ -105,18 +124,24 @@ Podcast AI is a powerful tool designed to transform raw audio content into struc
 ## 📁 Project Structure
 
 ```
+├── .streamlit/             # Streamlit configuration
+│   └── config.toml         # Upload limits, theme settings
+├── config.json             # Security and UI configuration
 ├── data/                   # Storage for uploaded audio files
 ├── language_adaptation/    # Translation and Romanization modules
 │   ├── translator.py       # Deep Translator logic with chunking
 │   └── romanizer.py        # Indic Transliteration logic
 ├── outputs/                # JSON outputs (segments, transcripts)
 ├── pipeline/               # Core pipeline orchestration
+│   └── pipeline_core.py    # Audio processing pipeline
 ├── topic_intelligence/     # Topic modeling and segmentation
 │   └── topic_segmentation/
 │       ├── summaries.py    # Abstractive summarization
-│       └── ...
+│       └── topic_segmentation_core.py
 ├── ui/                     # Streamlit frontend application
-│   └── app.py              # Main UI entry point
+│   ├── app.py              # Main UI entry point
+│   └── visualization/      # Visualization components
+│       └── timeline.html   # Standalone timeline demo
 └── requirements.txt        # Project dependencies
 ```
 

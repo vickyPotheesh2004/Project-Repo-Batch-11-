@@ -2,6 +2,8 @@ import streamlit as st
 import sys
 import json
 import subprocess
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from pathlib import Path
 
 # Set up project paths
@@ -9,6 +11,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 UI_DIR = Path(__file__).resolve().parent
 DATA_DIR = PROJECT_ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
+
+# Detect venv Python path (for subprocess calls)
+VENV_PYTHON = PROJECT_ROOT / "venv" / "Scripts" / "python.exe"
+if not VENV_PYTHON.exists():
+    # Fallback to sys.executable if venv not found
+    VENV_PYTHON = Path(sys.executable)
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -57,18 +65,119 @@ if "selected_topic" not in st.session_state:
 
 st.markdown("""
 <style>
+    /* === ADAPTIVE UI STYLING === */
+    
+    /* Base app background */
     .stApp {
         background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
     }
     
-    .timeline-container {
-        background: #ffffff;
-        padding: 20px;
+    /* === DARK BOX STYLING (HIGHEST PRIORITY) === */
+    /* Black background boxes with WHITE text */
+    .content-box,
+    .transcript-box,
+    .topic-box,
+    .info-box,
+    .metric-box,
+    .step-header,
+    .sub-header {
+        background: #1a1a1a !important;
+        color: #ffffff !important;
+        padding: 1.5rem;
         border-radius: 12px;
-        margin: 20px 0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin: 1rem 0;
+        border: 1px solid #333333;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     
+    /* WHITE text for ALL children inside dark boxes - HIGHEST SPECIFICITY */
+    .stApp .content-box,
+    .stApp .content-box *,
+    .stApp .content-box p,
+    .stApp .content-box span,
+    .stApp .content-box h1,
+    .stApp .content-box h2,
+    .stApp .content-box h3,
+    .stApp .transcript-box,
+    .stApp .transcript-box *,
+    .stApp .transcript-box p,
+    .stApp .transcript-box span,
+    .stApp .topic-box,
+    .stApp .topic-box *,
+    .stApp .topic-box p,
+    .stApp .topic-box span,
+    .stApp .info-box,
+    .stApp .info-box *,
+    .stApp .info-box p,
+    .stApp .info-box span,
+    .stApp .metric-box,
+    .stApp .metric-box *,
+    .stApp .metric-box p,
+    .stApp .metric-box span,
+    .stApp .step-header,
+    .stApp .step-header *,
+    .stApp .step-header h2,
+    .stApp .sub-header,
+    .stApp .sub-header * {
+        color: #ffffff !important;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        color: #cccccc !important;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #ffffff !important;
+    }
+    
+    /* === LIGHT BACKGROUND AREAS (DEFAULT) === */
+    /* Black text on light backgrounds - LOWER PRIORITY */
+    .stApp .stMarkdown,
+    .stApp .element-container,
+    .stApp p,
+    .stApp span,
+    .stApp label,
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
+    [data-testid="stMarkdownContainer"] {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    }
+    
+    /* === BUTTONS === */
+    .stButton button {
+        color: #ffffff !important;
+    }
+    
+    /* === KEYWORD TAGS === */
+    .keyword-tag {
+        display: inline-block;
+        background: #2196F3;
+        color: #ffffff !important;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        margin: 0.3rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    /* === SENTIMENT COLORS (white text) === */
+    .sentiment-positive { 
+        background-color: #4CAF50; 
+        color: #ffffff !important;
+    }
+    .sentiment-neutral { 
+        background-color: #FF9800; 
+        color: #ffffff !important;
+    }
+    .sentiment-negative { 
+        background-color: #F44336; 
+        color: #ffffff !important;
+    }
+    
+    /* === SEGMENT BLOCKS === */
     .segment-block {
         height: 40px;
         border-radius: 6px;
@@ -77,26 +186,12 @@ st.markdown("""
         cursor: pointer;
         text-align: center;
         line-height: 40px;
-        color: white;
+        color: #ffffff !important;
         font-weight: 500;
         font-size: 12px;
     }
     
-    .sentiment-positive { background-color: #4CAF50; }
-    .sentiment-neutral { background-color: #FF9800; }
-    .sentiment-negative { background-color: #F44336; }
-    
-    .keyword-tag {
-        display: inline-block;
-        background: #1976d2;
-        color: #ffffff;
-        padding: 0.4rem 1rem;
-        border-radius: 20px;
-        margin: 0.3rem;
-        font-size: 0.9rem;
-        font-weight: 600;
-    }
-    
+    /* === MAIN HEADER === */
     .main-header {
         font-size: 3rem;
         font-weight: 700;
@@ -108,114 +203,50 @@ st.markdown("""
         letter-spacing: -0.02em;
     }
     
-    .sub-header {
-        background: #f0f4f8;
-        color: #1a1a1a;
-        padding: 1rem;
-        border-radius: 10px;
-        text-align: center;
-        font-size: 1.1rem;
-        margin-bottom: 2rem;
-        font-weight: 500;
-        border: 1px solid #cbd5e0;
-    }
-    
-    .step-header {
-        background: #e8eaf6;
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin: 2rem 0 1.5rem 0;
-        border-left: 5px solid #5c6bc0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-    
-    .step-header h2 {
-        margin: 0;
-        color: #3949ab;
-        font-size: 1.8rem;
-        font-weight: 700;
-    }
-    
-    .transcript-box {
-        background: #ffffff;
-        padding: 2rem;
-        border-radius: 12px;
-        border-left: 5px solid #667eea;
-        margin: 1.5rem 0;
-        font-size: 1.1rem;
-        line-height: 2;
-        color: #212121;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        text-align: justify;
-    }
-    
-    .topic-box {
-        background: #ffffff;
-        padding: 1.75rem;
-        border-radius: 12px;
-        border: 2px solid #e0e0e0;
-        margin: 1.25rem 0;
-        font-size: 1.05rem;
-        line-height: 1.9;
-        color: #212121;
-        text-align: justify;
-    }
-    
+    /* === TRANSLATION BOX === */
     .translation-box {
-        background: #e8f5e9;
+        background: #1a1a1a !important;
         padding: 2rem;
         border-radius: 12px;
         border-left: 5px solid #4caf50;
         margin: 1.5rem 0;
         font-size: 1.1rem;
         line-height: 2;
-        color: #212121;
+        color: #ffffff !important;
         text-align: justify;
     }
     
+    .stApp .translation-box,
+    .stApp .translation-box * {
+        color: #ffffff !important;
+    }
+    
     .localization-box {
-        background: #fff3e0;
+        background: #1a1a1a !important;
         padding: 2rem;
         border-radius: 12px;
         border-left: 5px solid #ff9800;
         margin: 1.5rem 0;
         font-size: 1.1rem;
         line-height: 2;
-        color: #212121;
+        color: #ffffff !important;
         text-align: justify;
+    }
+    
+    .stApp .localization-box,
+    .stApp .localization-box * {
+        color: #ffffff !important;
     }
     
     .keyword-tag {
         display: inline-block;
         background: #1976d2;
-        color: #ffffff;
+        color: #ffffff !important;
         padding: 0.4rem 1rem;
         border-radius: 20px;
         margin: 0.3rem;
         font-size: 0.9rem;
         font-weight: 600;
-    }
-    
-    .metric-box {
-        background: #ffffff;
-        padding: 1rem;
-        border-radius: 8px;
-        text-align: center;
-        border: 2px solid #e0e0e0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .metric-label {
-        color: #666666 !important;
-        font-size: 0.875rem;
-        margin: 0;
-    }
-    
-    .metric-value {
-        color: #1a1a1a !important;
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 0.5rem 0 0 0;
     }
     
     /* Make file uploader background white */
@@ -421,76 +452,110 @@ def get_sentiment_color(sentiment):
 
 
 def render_timeline(data):
-    """Render interactive timeline visualization"""
+    """Render interactive timeline visualization as a matplotlib horizontal bar graph"""
     if not data or "topics" not in data:
+        st.error("ERROR_STATE: No timeline data available")
         return
     
-    topics = data["topics"]
+    # === CRITICAL: Sort topics by start time to ensure chronological order ===
+    topics = sorted(data["topics"], key=lambda t: t.get("start", 0))
+    
     if not topics:
+        st.error("ERROR_STATE: No topics found")
         return
+    
+    # Assign deterministic display IDs based on sorted order
+    for idx, topic in enumerate(topics):
+        topic["_display_id"] = idx + 1
     
     # Get total duration
     total_duration = max(topic.get("end", 0) for topic in topics)
+    if total_duration <= 0:
+        st.error("ERROR_STATE: Invalid timeline data - no valid duration found")
+        return
     
-    st.markdown("### 📊 Interactive Timeline")
-    st.markdown("<div class='timeline-container'>", unsafe_allow_html=True)
+    # Segment colors (data-driven)
+    SEGMENT_COLORS = ['#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#00BCD4', '#E91E63', '#3F51B5', '#009688']
     
-    # Create a horizontal bar timeline
-    timeline_html = "<div style='width: 100%; height: 60px; position: relative; background-color: #e0e0e0; border-radius: 8px; overflow: hidden; margin-bottom: 15px;'>"
+    st.markdown("<h3 style='color:#000000;'>Interactive Timeline</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#000000;'>Click a topic button below to view details</p>", unsafe_allow_html=True)
     
-    # Calculate and render segments
+    # === MATPLOTLIB BAR GRAPH VISUALIZATION ===
+    fig, ax = plt.subplots(figsize=(14, 1.5))
+    fig.patch.set_facecolor('#ffffff')
+    ax.set_facecolor('#e0e0e0')
+    
+    # Calculate minimum width needed for text (about 5% of total duration)
+    min_label_width = total_duration * 0.05
+    
+    # Draw each topic segment as a horizontal bar (in sorted order)
     for i, topic in enumerate(topics):
+        topic_display_id = topic.get("_display_id", i + 1)
         start = topic.get("start", 0)
         end = topic.get("end", 0)
         duration = end - start
-        width_percent = (duration / total_duration) * 100 if total_duration > 0 else 0
-        left_percent = (start / total_duration) * 100 if total_duration > 0 else 0
+        color = SEGMENT_COLORS[i % len(SEGMENT_COLORS)]
         
-        sentiment_class = get_sentiment_color(topic.get("sentiment", "NEUTRAL"))
-        duration_text = f"T{i+1} ({format_duration(start)}-{format_duration(end)})"
+        # Draw the bar segment
+        ax.barh(y=0, width=duration, left=start, height=0.5, color=color, edgecolor='white', linewidth=0.5)
         
-        # Create segment block
-        segment_html = f"""
-        <div class='segment-block {sentiment_class}' 
-             style='width: {width_percent:.2f}%; height: 100%; left: {left_percent:.2f}%; position: absolute; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1; transition: opacity 0.2s;'
-             onclick='document.getElementById("timeline-topic-btn-{i}").click()'>
-            <span style='font-size: 12px; font-weight: 500; color: white; text-align: center; z-index: 2;'>
-                {duration_text}
-            </span>
-        </div>
-        """
-        timeline_html += segment_html
+        # Only add label if segment is wide enough to avoid overlap
+        if duration >= min_label_width:
+            mid_point = start + duration / 2
+            ax.text(mid_point, 0, f"T{topic_display_id}", ha='center', va='center', fontsize=8, fontweight='bold', color='white')
     
-    timeline_html += "</div>"
+    # Configure axes
+    ax.set_xlim(0, total_duration)
+    ax.set_ylim(-0.5, 0.5)
+    ax.set_yticks([])
+    ax.set_xlabel("Time (seconds)", fontsize=10, color='#000000')
+    ax.tick_params(axis='x', colors='#000000')
     
-    # Display timeline legend
-    legend_html = """
-    <div style='display: flex; gap: 20px; margin-bottom: 15px;'>
-        <div style='display: flex; align-items: center; gap: 5px;'>
-            <div style='width: 20px; height: 20px; background-color: #4CAF50; border-radius: 4px;'></div>
-            <span>Positive</span>
-        </div>
-        <div style='display: flex; align-items: center; gap: 5px;'>
-            <div style='width: 20px; height: 20px; background-color: #FF9800; border-radius: 4px;'></div>
-            <span>Neutral</span>
-        </div>
-        <div style='display: flex; align-items: center; gap: 5px;'>
-            <div style='width: 20px; height: 20px; background-color: #F44336; border-radius: 4px;'></div>
-            <span>Negative</span>
-        </div>
-    </div>
-    """
-    st.markdown(legend_html, unsafe_allow_html=True)
+    # Add time markers
+    ax.set_xticks([0, total_duration / 4, total_duration / 2, 3 * total_duration / 4, total_duration])
+    ax.set_xticklabels([format_duration(0), format_duration(total_duration / 4), 
+                        format_duration(total_duration / 2), format_duration(3 * total_duration / 4),
+                        format_duration(total_duration)])
     
-    st.markdown(timeline_html, unsafe_allow_html=True)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
     
-    # Create invisible buttons for interaction
-    for i in range(len(topics)):
-        if st.button(f"Select Topic {i+1}", key=f"timeline-topic-btn-{i}", help=f"View details for topic {i+1}", 
-                 type="secondary", use_container_width=True):
-            st.session_state.selected_topic = i
+    plt.tight_layout()
     
-    st.markdown("</div>", unsafe_allow_html=True)
+    # Render the figure using st.pyplot (NOT raw code)
+    st.pyplot(fig)
+    plt.close(fig)
+    
+    # === LEGEND ===
+    st.markdown("<p style='color:#000000; font-weight:bold;'>Legend:</p>", unsafe_allow_html=True)
+    legend_cols = st.columns(min(len(topics), 4))
+    for i, topic in enumerate(topics):
+        topic_display_id = topic.get("_display_id", i + 1)
+        col_idx = i % min(len(topics), 4)
+        start = topic.get("start", 0)
+        end = topic.get("end", 0)
+        with legend_cols[col_idx]:
+            color = SEGMENT_COLORS[i % len(SEGMENT_COLORS)]
+            st.markdown(f"<span style='display:inline-block;width:12px;height:12px;background:{color};border-radius:2px;margin-right:6px;'></span><span style='color:#000000;'>Topic {topic_display_id} ({format_duration(start)} - {format_duration(end)})</span>", unsafe_allow_html=True)
+    
+    # === TOPIC SELECTION BUTTONS ===
+    st.markdown("<p style='color:#000000; font-weight:bold;'>Select a topic:</p>", unsafe_allow_html=True)
+    cols = st.columns(len(topics))
+    for i, (col, topic) in enumerate(zip(cols, topics)):
+        topic_display_id = topic.get("_display_id", i + 1)
+        with col:
+            is_selected = (st.session_state.selected_topic == i)
+            btn_type = "primary" if is_selected else "secondary"
+            if st.button(f"Topic {topic_display_id}", key=f"topic-select-btn-{i}", type=btn_type, use_container_width=True):
+                st.session_state.selected_topic = i
+                st.rerun()
+    
+    # Display selected topic details
+    if st.session_state.selected_topic is not None and 0 <= st.session_state.selected_topic < len(topics):
+        selected_topic = topics[st.session_state.selected_topic]
+        st.markdown("---")
+        display_topic_details(selected_topic)
 
 
 def sanitize_input(text):
@@ -500,35 +565,56 @@ def sanitize_input(text):
     # Remove potentially dangerous characters
     return str(text).replace("<", "&lt;").replace(">", "&gt;")
 
+
+def scale_sentiment_score(polarity_score):
+    """
+    Convert sentiment polarity score to 1-10 scale
+    Input range: -1.0 to +1.0
+    Output range: 1 to 10
+    Formula: scaled = ((polarity + 1) / 2) * 9 + 1
+    """
+    try:
+        polarity = float(polarity_score)
+        # Clamp to valid range
+        polarity = max(-1.0, min(1.0, polarity))
+        # Scale from [-1, 1] to [1, 10]
+        scaled = ((polarity + 1) / 2) * 9 + 1
+        return round(scaled, 1)
+    except (ValueError, TypeError):
+        return "UNKNOWN"
+
+
 def display_topic_details(topic):
     """Display detailed information for a selected topic with security measures"""
-    topic_id = topic.get("topic_id", 0) + 1
-    st.markdown(f"### 📌 Topic {topic_id}")
+    # Use _display_id for consistent labeling (falls back to topic_id + 1)
+    topic_display_id = topic.get("_display_id", topic.get("topic_id", 0) + 1)
+    st.markdown(f"<h3 style='color:#000000;'>Topic {topic_display_id}</h3>", unsafe_allow_html=True)
     
     # Summary with sanitization
-    st.markdown("**📋 Summary:**")
+    st.markdown("<p style='color:#000000; font-weight:bold;'>Summary</p>", unsafe_allow_html=True)
     summary = sanitize_input(topic.get("summary", "No summary available"))
     st.markdown(f"<div class='transcript-box'>{summary}</div>", unsafe_allow_html=True)
     
     # Keywords with sanitization
     keywords = topic.get("keywords", [])
     if keywords:
-        st.markdown("**🏷️ Keywords:**")
+        st.markdown("<p style='color:#000000; font-weight:bold;'>Keywords</p>", unsafe_allow_html=True)
         keyword_html = ""
         for keyword in keywords:
             safe_keyword = sanitize_input(keyword)
             keyword_html += f"<span class='keyword-tag'>{safe_keyword}</span>"
         st.markdown(keyword_html, unsafe_allow_html=True)
     
-    # Sentiment with defensive programming
+    # Sentiment with 1-10 scaling
     if "sentiment" in topic and topic["sentiment"]:
         sentiment = topic["sentiment"]
-        score = topic.get("sentiment_score", 0)
+        raw_score = topic.get("sentiment_score", 0)
+        scaled_score = scale_sentiment_score(raw_score)
         color_class = get_sentiment_color(sentiment)
-        st.markdown(f"**😊 Sentiment:** <span class='{color_class}'>{sentiment}</span> (Score: {score})", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:#000000;'><strong>Sentiment:</strong> <span class='{color_class}'>{sentiment}</span> (Score: {scaled_score}/10)</p>", unsafe_allow_html=True)
     
     # Full text with sanitization
-    st.markdown("**📝 Full Transcript:**")
+    st.markdown("<p style='color:#000000; font-weight:bold;'>Transcript</p>", unsafe_allow_html=True)
     full_text = sanitize_input(topic.get("text", ""))
     st.markdown(f"<div class='transcript-box'>{full_text}</div>", unsafe_allow_html=True)
 
@@ -613,7 +699,7 @@ if audio_file:
                 # Step 1: Run pipeline_core for transcription
                 st.info("Step 1/2: Transcribing audio...")
                 result = subprocess.run(
-                    [sys.executable, str(PROJECT_ROOT / "pipeline" / "pipeline_core.py"), str(audio_path)],
+                    [str(VENV_PYTHON), str(PROJECT_ROOT / "pipeline" / "pipeline_core.py"), str(audio_path)],
                     cwd=str(PROJECT_ROOT),
                     capture_output=True,
                     text=True,
@@ -627,7 +713,7 @@ if audio_file:
                     # Step 2: Run topic segmentation directly as a module
                     st.info("Step 2/2: Segmenting topics...")
                     result2 = subprocess.run(
-                        [sys.executable, "-m", "topic_intelligence.topic_segmentation.topic_segmentation_core", 
+                        [str(VENV_PYTHON), "-m", "topic_intelligence.topic_segmentation.topic_segmentation_core", 
                          str(PIPELINE_OUTPUT)],
                         cwd=str(PROJECT_ROOT),
                         capture_output=True,
@@ -680,6 +766,14 @@ if not topics:
     st.warning("⚠️ No topics found in the processed data.")
     st.stop()
 
+# === CRITICAL: Sort topics by start time to ensure chronological order ===
+# This prevents mixed/out-of-order topic rendering
+topics = sorted(topics, key=lambda t: t.get("start", 0))
+
+# Assign deterministic topic IDs based on sorted order
+for idx, topic in enumerate(topics):
+    topic["_display_id"] = idx + 1  # 1-indexed for display
+
 full_transcript = " ".join(
     " ".join(s.get("text", "") for s in topic.get("sentences", []))
     for topic in topics
@@ -697,7 +791,7 @@ else:
     st.warning("⚠️ No transcript available.")
 
 st.markdown("---")
-st.markdown('<div class="step-header"><h2> 📊 Interactive Timeline</h2></div>', unsafe_allow_html=True)
+st.markdown('<div class="step-header"><h2>Interactive Timeline</h2></div>', unsafe_allow_html=True)
 
 # Display interactive timeline
 render_timeline(segmented_data)
@@ -707,7 +801,7 @@ st.markdown('<div class="step-header"><h2> Topic Segmentation</h2></div>', unsaf
 
 col1, col2 = st.columns([2, 1])
 with col1:
-    st.info(f"📊 **{len(topics)}** topics identified in this audio")
+    st.info(f"**{len(topics)}** topics identified in this audio")
 with col2:
     st.markdown(f"""
     <div class="metric-box">
@@ -720,60 +814,71 @@ with col2:
 st.markdown("<br>", unsafe_allow_html=True)
 
 for idx, topic in enumerate(topics):
-    with st.expander(f"📌 **Topic {idx + 1}** — {topic.get('summary', 'No summary')[:70]}...", expanded=(idx == 0)):
+    # Use the deterministic _display_id for consistent labeling
+    topic_display_id = topic.get("_display_id", idx + 1)
+    topic_start = topic.get("start", 0)
+    topic_end = topic.get("end", 0)
+    topic_duration = topic_end - topic_start
+    topic_summary = topic.get('summary', 'No summary available')
+    
+    # Create unique key for this topic container based on sorted index
+    topic_key = f"topic_container_{idx}"
+    
+    # Expander header shows topic number and preview
+    expander_title = f"**Topic {topic_display_id}** ({format_duration(topic_start)} - {format_duration(topic_end)}) — {topic_summary[:60]}..."
+    
+    with st.expander(expander_title, expanded=(idx == 0)):
+        # === TOPIC CONTAINER START ===
+        # All content below is bound to this specific topic
         
-        start_time = topic.get("start", 0)
-        end_time = topic.get("end", 0)
-        duration = end_time - start_time
-        
-        st_str = f"{start_time:.1f}s"
-        et_str = f"{end_time:.1f}s"
-        dur_str = f"{duration:.1f}s"
-        
+        # 1. TIME METRICS
         col1, col2, col3 = st.columns(3)
         with col1:
             st.markdown(f"""
             <div class="metric-box">
                 <p class="metric-label">Start Time</p>
-                <p class="metric-value">{st_str}</p>
+                <p class="metric-value">{format_duration(topic_start)}</p>
             </div>
             """, unsafe_allow_html=True)
         with col2:
             st.markdown(f"""
             <div class="metric-box">
                 <p class="metric-label">End Time</p>
-                <p class="metric-value">{et_str}</p>
+                <p class="metric-value">{format_duration(topic_end)}</p>
             </div>
             """, unsafe_allow_html=True)
         with col3:
             st.markdown(f"""
             <div class="metric-box">
                 <p class="metric-label">Duration</p>
-                <p class="metric-value">{dur_str}</p>
+                <p class="metric-value">{format_duration(topic_duration)}</p>
             </div>
             """, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        st.markdown("### 📝 Summary")
-        summary_text = topic.get('summary', 'No summary available')
-        st.markdown(f'<div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 3px solid #667eea; margin-bottom: 1.5rem; color: #1a1a1a; font-size: 1rem; text-align: justify;">{summary_text}</div>', unsafe_allow_html=True)
+        # 2. SUMMARY
+        st.markdown("### Summary")
+        st.markdown(f'<div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 3px solid #667eea; margin-bottom: 1.5rem; color: #1a1a1a; font-size: 1rem; text-align: justify;">{topic_summary}</div>', unsafe_allow_html=True)
         
-        # Add sentiment analysis display
-        if "sentiment" in topic:
+        # 3. SENTIMENT (with 1-10 scaling)
+        if "sentiment" in topic and topic["sentiment"]:
             sentiment = topic["sentiment"]
-            score = topic.get("sentiment_score", 0)
+            raw_score = topic.get("sentiment_score", 0)
+            scaled_score = scale_sentiment_score(raw_score)
             color_class = get_sentiment_color(sentiment)
-            st.markdown("### 😊 Sentiment Analysis")
-            st.markdown(f'<div class="{color_class}" style="padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center; font-weight: 600;">{sentiment} (Score: {score})</div>', unsafe_allow_html=True)
+            st.markdown("### Sentiment Analysis")
+            st.markdown(f'<div class="{color_class}" style="padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center; font-weight: 600;">{sentiment} (Score: {scaled_score}/10)</div>', unsafe_allow_html=True)
         
+        # 4. KEYWORDS
         keywords = topic.get("keywords", [])
         if keywords:
-            st.markdown("### 🔑 Keywords")
+            st.markdown("### Keywords")
             keyword_html = "".join([f'<span class="keyword-tag">{kw}</span>' for kw in keywords])
             st.markdown(f'<div style="margin-bottom: 1.5rem;">{keyword_html}</div>', unsafe_allow_html=True)
         
-        st.markdown("### 📄 Transcript")
+        # 5. TRANSCRIPT
+        st.markdown("### Transcript")
         sentences = topic.get("sentences", [])
         if sentences:
             topic_transcript = " ".join(s.get("text", "") for s in sentences)
@@ -784,6 +889,8 @@ for idx, topic in enumerate(topics):
                 st.warning("⚠️ No transcript available for this topic.")
         else:
             st.warning("⚠️ No sentences found for this topic.")
+        
+        # === TOPIC CONTAINER END ===
 
 st.markdown("---")
 st.markdown('<div class="step-header"><h2> Translation</h2></div>', unsafe_allow_html=True)
@@ -805,16 +912,17 @@ if st.button("Translate All Topics", type="primary"):
         st.markdown("### Translated Transcripts (" + target_lang + ")")
         
         for idx, topic in enumerate(topics):
+            topic_display_id = topic.get("_display_id", idx + 1)
             sentences = topic.get("sentences", [])
             topic_text = " ".join(s.get("text", "") for s in sentences)
             
             if topic_text.strip():
                 try:
                     translated = translate_auto(topic_text, "en", LANGUAGES[target_lang])
-                    st.markdown(f"**Topic {idx + 1}:**")
+                    st.markdown(f"**Topic {topic_display_id}:**")
                     st.markdown(f'<div class="translation-box">{translated}</div>', unsafe_allow_html=True)
                 except Exception as e:
-                    st.error(f"Translation error for Topic {idx + 1}: {str(e)}")
+                    st.error(f"Translation error for Topic {topic_display_id}: {str(e)}")
 
 st.markdown("---")
 st.markdown('<div class="step-header"><h2> Localization (Romanization)</h2></div>', unsafe_allow_html=True)
@@ -830,6 +938,7 @@ if st.button("Romanize Translations", type="primary"):
         st.markdown(f"### Romanized Transcripts ({target_lang})")
         
         for idx, topic in enumerate(topics):
+            topic_display_id = topic.get("_display_id", idx + 1)
             sentences = topic.get("sentences", [])
             topic_text = " ".join(s.get("text", "") for s in sentences)
             
@@ -839,7 +948,7 @@ if st.button("Romanize Translations", type="primary"):
                     translated = translate_auto(topic_text, "en", LANGUAGES[target_lang])
                     romanized = romanize_text(translated, LANGUAGES[target_lang])
                     
-                    st.markdown(f"**Topic {idx + 1}:**")
+                    st.markdown(f"**Topic {topic_display_id}:**")
                     st.markdown(f"""
                     <div style="margin-bottom: 1rem;">
                         <strong>Translation ({target_lang}):</strong>
@@ -856,7 +965,7 @@ if st.button("Romanize Translations", type="primary"):
                     """, unsafe_allow_html=True)
                     
                 except Exception as e:
-                    st.error(f"Romanization error for Topic {idx + 1}: {str(e)}")
+                    st.error(f"Romanization error for Topic {topic_display_id}: {str(e)}")
 
 st.markdown("---")
 st.markdown("""

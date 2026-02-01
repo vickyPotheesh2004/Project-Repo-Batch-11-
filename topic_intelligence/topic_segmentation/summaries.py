@@ -117,7 +117,7 @@ def generate_abstractive_summary(text: str) -> str:
         
         result = _llm(
             prompt,
-            max_length=100,
+            max_new_tokens=100,
             min_length=20,
             do_sample=False,
             num_beams=4

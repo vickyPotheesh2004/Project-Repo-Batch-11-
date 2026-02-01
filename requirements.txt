@@ -14,3 +14,4 @@ watchdog
 sentencepiece
 ffmpeg-python
 textblob
+matplotlib
