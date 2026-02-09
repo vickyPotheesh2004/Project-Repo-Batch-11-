@@ -188,6 +188,127 @@ AudioMind is a powerful AI-driven platform that transforms raw audio content int
 └── requirements.txt        # Project dependencies
 ```
 
+---
+
+## 📋 Public Feedback
+
+### Test Case 1: Music (Noise Environment Check)
+
+| Metric | Result |
+|--------|--------|
+| **Name** | I wanna be you'r |
+| **Genre** | Music |
+| **Duration** | 4 mins |
+| **Transcription Quality** | 10/10 (accurate lyrics) |
+| **Topic Segmentation** | 2 segments |
+| **Segment Durations** | 1:50, 1:16 |
+| **Interactive Timestamp Bar** | ✅ Working |
+| **Visual Bar Graph** | ✅ Working |
+| **Summarization** | ✅ Perfect |
+| **Keywords** | ✅ Good |
+| **Word Cloud** | ✅ Working |
+| **Translation** | ✅ Telugu translation working |
+| **Localization** | ✅ Telugu tune with English letters working |
+| **Overall Score** | **9/10** |
+
+---
+
+### Test Case 2: Political Podcast
+
+| Metric | Result |
+|--------|--------|
+| **Name** | Broadcast-3PoliticallyPearShaped |
+| **Genre** | Political Podcast |
+| **Duration** | 10 mins |
+| **Transcription Quality** | 10/10 |
+| **Topic Segmentation** | 10 segments |
+| **Segment Durations** | 1:11 \| 0:54 \| 1:15 \| ... |
+| **Interactive Timestamp Bar** | ✅ Working |
+| **Summarization** | ✅ Perfect |
+| **Keywords** | ✅ Perfect |
+| **Word Cloud** | ✅ Working |
+| **Translation** | ✅ Working |
+| **Localization** | ✅ Working |
+| **Overall Score** | **10/10** |
+
+---
+
+### Test Case 3: Noise Environment (Edge Case)
+
+| Metric | Result |
+|--------|--------|
+| **Name** | Crowd Talking |
+| **Genre** | Noise (not a podcast) |
+| **Duration** | 0 mins |
+| **Transcription Quality** | No topics found |
+| **Topic Segmentation** | No topics found |
+| **Segment Durations** | No topics found |
+| **Interactive Timestamp Bar** | No topics found |
+| **Summarization** | No topics found |
+| **Keywords** | No topics found |
+| **Word Cloud** | No topics found |
+| **Translation** | No topics found |
+| **Localization** | No topics found |
+| **Overall Score** | **N/A** (Expected behavior for noise) |
+
+> **Note**: This test validates that the system correctly identifies and handles non-speech audio by gracefully reporting "No topics found" rather than producing false positives.
+
+---
+
+### Test Case 4: TED Talk
+
+| Metric | Result |
+|--------|--------|
+| **Name** | Ted Talk |
+| **Genre** | Business |
+| **Duration** | 4 mins |
+| **Transcription Quality** | 10/10 |
+| **Topic Segmentation** | 3 segments |
+| **Segment Durations** | 1:39 \| 1:34 \| 0:52 |
+| **Interactive Timestamp Bar** | ✅ Working |
+| **Summarization** | ✅ Perfect |
+| **Keywords** | ✅ Good |
+| **Word Cloud** | ✅ Working |
+| **Translation** | ✅ Working |
+| **Localization** | ✅ Working |
+| **Overall Score** | **9/10** |
+
+---
+
+### Test Case 5: Audio Book
+
+| Metric | Result |
+|--------|--------|
+| **Name** | Audio Book |
+| **Genre** | Crime |
+| **Duration** | 12 mins |
+| **Transcription Quality** | 10/10 |
+| **Topic Segmentation** | 10 segments |
+| **Segment Durations** | 1:12 \| 1:04 \| 1:24 \| 1:12 \| 1:02 \| 1:05 \| 1:08 \| ... |
+| **Interactive Timestamp Bar** | ✅ Working |
+| **Summarization** | ✅ Perfect |
+| **Keywords** | ✅ Good |
+| **Word Cloud** | ✅ Working |
+| **Translation** | ✅ Working |
+| **Localization** | ✅ Working |
+| **Overall Score** | **10/10** |
+
+---
+
+## 📊 Test Summary
+
+| Content Type | Duration | Score |
+|--------------|----------|-------|
+| Music | 4 mins | 9/10 |
+| Political Podcast | 10 mins | 10/10 |
+| Noise (Edge Case) | 0 mins | N/A |
+| TED Talk | 4 mins | 9/10 |
+| Audio Book | 12 mins | 10/10 |
+
+**Average Score (valid tests): 9.5/10** ✨
+
+---
+
 👤 Author
 
     Potheesh Vignesh K
