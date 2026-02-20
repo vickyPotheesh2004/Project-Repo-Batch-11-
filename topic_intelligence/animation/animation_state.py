@@ -1,5 +1,5 @@
 """
-animation_state.py — 3D Animation State Generation for AudioMind
+animation_state.py — 3D Animation State Generation for LEXARA
 ----------------------------------------------------------------
 Generates animation states for each topic segment, synchronized
 with transcript timestamps for real-time 3D visualization.

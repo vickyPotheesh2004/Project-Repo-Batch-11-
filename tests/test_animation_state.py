@@ -150,7 +150,7 @@ def test_node_size_range():
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("AudioMind 3D Animation State Tests")
+    print("LEXARA 3D Animation State Tests")
     print("=" * 60)
     
     test_animation_states_generated()

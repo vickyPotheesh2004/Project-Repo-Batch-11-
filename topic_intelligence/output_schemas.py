@@ -1,5 +1,5 @@
 """
-output_schemas.py — Structured Output Definitions for AudioMind
+output_schemas.py — Structured Output Definitions for LEXARA
 ---------------------------------------------------------------
 Defines deterministic, machine-consumable schemas for transcription
 and animation outputs. Ensures modular, validated data structures.
@@ -135,9 +135,9 @@ class AnimationOutput:
 # =========================
 
 @dataclass
-class AudioMindOutput:
+class LexaraOutput:
     """
-    Complete structured output for AudioMind processing.
+    Complete structured output for LEXARA processing.
     
     Attributes:
         project_title: Fixed project title
@@ -145,7 +145,7 @@ class AudioMindOutput:
         transcription_outputs: List of transcription segments
         animation_outputs: List of animation states
     """
-    project_title: str = "AudioMind: Automated Podcast Transcription & Insights"
+    project_title: str = "LEXARA: Automated Podcast Transcription & Insights"
     audio_file: str = ""
     transcription_outputs: List[TranscriptionOutput] = field(default_factory=list)
     animation_outputs: List[AnimationOutput] = field(default_factory=list)

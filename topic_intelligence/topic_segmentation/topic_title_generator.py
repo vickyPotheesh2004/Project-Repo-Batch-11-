@@ -2,7 +2,7 @@
 topic_title_generator.py — Context-Aware Topic Title Generation
 ----------------------------------------------------------------
 Generates concise, semantic, and human-readable topic titles
-using LLM with proper prompting. Titles are limited to 8-10 words.
+using LLM with proper prompting. Titles are limited to 2-3 words.
 """
 
 import re
@@ -13,8 +13,8 @@ from collections import Counter
 # =========================
 
 USE_LLM = True
-MAX_TITLE_WORDS = 10
-MIN_TITLE_WORDS = 3
+MAX_TITLE_WORDS = 3
+MIN_TITLE_WORDS = 2
 LLM_MODEL_NAME = "google/flan-t5-base"
 UNKNOWN_TITLE = "UNKNOWN"
 
@@ -94,13 +94,13 @@ def generate_llm_title(text: str) -> str:
         if not cleaned_text or len(cleaned_text) < 30:
             return create_fallback_title(text)
         
-        # Improved prompt for better title generation
-        prompt = f"What is this text about? Summarize in 5-7 words: {cleaned_text}"
+        # Concise prompt for 2-3 word title generation
+        prompt = f"What is the main topic? Answer in exactly 2 words: {cleaned_text}"
         
         result = _llm(
             prompt,
-            max_new_tokens=25,
-            min_length=3,
+            max_new_tokens=10,
+            min_length=2,
             do_sample=False,
             num_beams=4
         )
@@ -134,35 +134,18 @@ def generate_llm_title(text: str) -> str:
 
 def create_fallback_title(text: str) -> str:
     """
-    Create a fallback title by extracting the first meaningful phrase.
+    Create a fallback title of 2-3 words from key concepts.
     """
-    # Clean and get first sentence
-    cleaned = clean_text_for_title(text)
-    sentences = re.split(r'[.!?]', cleaned)
-    
-    if sentences:
-        first_sent = sentences[0].strip()
-        # Extract first 6-8 meaningful words
-        words = first_sent.split()
-        meaningful = [w for w in words if w.lower() not in STOPWORDS and len(w) > 1]
-        
-        if len(meaningful) >= 3:
-            # Create title from first meaningful words
-            title_words = meaningful[:6]
-            title = ' '.join(w.title() for w in title_words)
-            return truncate_to_word_limit(title)
-    
-    # Final fallback: extract theme from content
     key_concepts = extract_key_concepts(text)
     
     if not key_concepts:
-        return "Audio Segment Content"
+        return "Audio Segment"
     
-    # Create a more natural title
+    # Create concise 2-3 word title from top concepts
     if len(key_concepts) >= 2:
-        title = f"{key_concepts[0].title()} and {key_concepts[1].title()} Theme"
+        title = f"{key_concepts[0].title()} {key_concepts[1].title()}"
     else:
-        title = f"{key_concepts[0].title()} Content"
+        title = f"{key_concepts[0].title()} Overview"
     
     return truncate_to_word_limit(title)
 
@@ -180,7 +163,7 @@ def generate_topic_title(text: str, keywords: list = None) -> str:
         keywords: Optional keywords for context
         
     Returns:
-        A concise topic title (max 8-10 words) or UNKNOWN if ambiguous
+        A concise topic title (2-3 words) or UNKNOWN if ambiguous
     """
     if not text or len(text.strip()) < 20:
         return UNKNOWN_TITLE

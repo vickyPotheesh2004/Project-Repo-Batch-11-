@@ -1,6 +1,6 @@
-# 🎧 AudioMind: Automated Podcast Transcription & Insights
+# 🎧 LEXARA: Automated Podcast Transcription & Insights
 
-AudioMind is a powerful AI-driven platform that transforms raw audio content into structured, actionable insights. By leveraging advanced NLP models and real-time 3D visualization, it automates transcription, topic segmentation, title generation, and cross-language translation.
+LEXARA is a powerful AI-driven platform that transforms raw audio content into structured, actionable insights. By leveraging advanced NLP models and real-time 3D visualization, it automates transcription, topic segmentation, title generation, and cross-language translation.
 
 ## 🚀 Key Features
 

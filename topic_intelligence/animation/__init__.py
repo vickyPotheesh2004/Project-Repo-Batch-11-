@@ -1,5 +1,5 @@
 """
-Animation module for AudioMind 3D visualization.
+Animation module for LEXARA 3D visualization.
 """
 
 from .animation_state import generate_animation_states, AnimationStateGenerator

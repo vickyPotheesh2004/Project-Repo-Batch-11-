@@ -1,8 +1,8 @@
 """
-styles.py — Shared CSS Styles for AudioMind UI
+styles.py — Shared CSS Styles for LEXARA UI
 -----------------------------------------------
 This module provides shared style constants and CSS utilities
-for consistent styling across the AudioMind application.
+for consistent styling across the LEXARA application.
 """
 
 # UI Color Palette

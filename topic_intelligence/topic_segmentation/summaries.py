@@ -112,13 +112,13 @@ def generate_abstractive_summary(text: str) -> str:
         if not key_points or len(key_points) < 50:
             return create_simple_summary(text)
         
-        # Improved prompt for better summarization
-        prompt = f"Summarize this in one sentence: {key_points}"
+        # Expert-level explanatory summary prompt
+        prompt = f"Explain the core concept discussed in this text in a structured, expert-level paragraph. Include contextual depth and specific details: {key_points}"
         
         result = _llm(
             prompt,
-            max_new_tokens=80,
-            min_length=15,
+            max_new_tokens=150,
+            min_length=30,
             do_sample=False,
             num_beams=4
         )
@@ -152,53 +152,87 @@ def generate_abstractive_summary(text: str) -> str:
 
 def create_simple_summary(text: str) -> str:
     """
-    Create a meaningful summary by analyzing the content themes.
+    Create a unique extractive summary directly from the segment's transcript.
+    No templates — summary is derived purely from the segment's own spoken content.
     """
     text = clean_text_for_summary(text)
     
-    # Extract meaningful words
-    words = re.findall(r'\b[a-zA-Z]{4,}\b', text.lower())
-    words = [w for w in words if w not in STOPWORDS]
+    if not text or len(text.strip()) < 30:
+        return "Brief audio segment."
     
-    if not words:
-        return "This segment contains audio content."
+    # Split into real sentences from the transcript
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [s.strip() for s in sentences if len(s.strip()) > 15]
     
-    # Count word frequencies to find themes
-    word_freq = Counter(words)
-    top_words = [word for word, _ in word_freq.most_common(5)]
+    if not sentences:
+        # If no proper sentences, take the first chunk of text directly
+        words = text.split()
+        if len(words) > 10:
+            return ' '.join(words[:25]).strip() + '.'
+        return text.strip() + '.'
     
-    # Detect content type and create appropriate summary
-    text_lower = text.lower()
+    # Filler patterns to remove from transcript speech
+    filler_pattern = re.compile(
+        r'\b(you know|right|okay|basically|so|like|well|all right|'
+        r'um|uh|I mean|let\'s see|let me|gonna|gotta)\b[,]?\s*',
+        re.IGNORECASE
+    )
     
-    # Check for song/music content patterns
-    music_indicators = ['love', 'heart', 'feel', 'baby', 'night', 'dream', 'want', 'need', 
-                        'wanna', 'gonna', 'slave', 'master', 'yours', 'mine', 'forever']
-    is_music = sum(1 for w in music_indicators if w in text_lower) >= 2
-    
-    if is_music:
-        # Create a music-style summary
-        themes = []
-        if any(w in text_lower for w in ['love', 'heart', 'yours', 'mine']):
-            themes.append('love and devotion')
-        if any(w in text_lower for w in ['want', 'wanna', 'need', 'desire']):
-            themes.append('desire and longing')
-        if any(w in text_lower for w in ['slave', 'master', 'control']):
-            themes.append('passion and intensity')
-        if any(w in text_lower for w in ['night', 'dream', 'feel']):
-            themes.append('emotions and feelings')
+    # Score each sentence by informativeness (content word density)
+    scored_sentences = []
+    for sent in sentences:
+        # Clean fillers
+        cleaned = filler_pattern.sub('', sent).strip()
+        cleaned = re.sub(r'\s+', ' ', cleaned).strip()
         
-        if themes:
-            return f"This segment contains song lyrics expressing {' and '.join(themes[:2])}."
-        return "This segment contains song lyrics with emotional themes."
+        if len(cleaned) < 15:
+            continue
+        
+        # Score by content word density — more unique content words = more informative
+        content_words = [w.lower() for w in cleaned.split() 
+                        if w.lower() not in STOPWORDS and len(w) > 2]
+        unique_content = set(content_words)
+        
+        # Higher score for more unique content words and moderate length
+        word_count = len(cleaned.split())
+        score = len(unique_content) * 3 + min(word_count, 20)
+        
+        # Penalize very short or very generic sentences
+        if word_count < 5:
+            score -= 10
+        
+        scored_sentences.append((score, cleaned))
     
-    # For spoken content, summarize key themes
-    if len(top_words) >= 3:
-        themes = f"{top_words[0]}, {top_words[1]}, and {top_words[2]}"
-        return f"This segment discusses topics related to {themes}."
-    elif len(top_words) >= 1:
-        return f"This segment focuses on {top_words[0]} and related themes."
-    else:
-        return "This segment contains spoken audio content."
+    if not scored_sentences:
+        # Direct fallback: use first sentence from transcript
+        first = filler_pattern.sub('', sentences[0]).strip()
+        first = re.sub(r'\s+', ' ', first).strip()
+        if first:
+            return first[0].upper() + first[1:] + ('.' if not first.endswith('.') else '')
+        return sentences[0].strip() + '.'
+    
+    # Sort by score, pick top 2-3 most informative distinct sentences
+    scored_sentences.sort(key=lambda x: x[0], reverse=True)
+    
+    selected = []
+    for _, sent in scored_sentences:
+        # Skip near-duplicates (sentences that start the same way)
+        if selected and any(sent[:25].lower() == s[:25].lower() for s in selected):
+            continue
+        selected.append(sent)
+        if len(selected) >= 3:
+            break
+    
+    # Build the final summary from selected transcript sentences
+    parts = []
+    for sent in selected:
+        # Ensure proper capitalization and punctuation
+        sent = sent[0].upper() + sent[1:] if sent else sent
+        if sent and not sent.endswith('.'):
+            sent += '.'
+        parts.append(sent)
+    
+    return ' '.join(parts)
 
 
 # =========================

@@ -1,7 +1,7 @@
 """
 test_topic_title.py — Tests for Topic Title Generation
 ------------------------------------------------------
-Validates topic title generation meets AudioMind constraints.
+Validates topic title generation meets LEXARA constraints.
 """
 
 import sys
@@ -111,7 +111,7 @@ def test_title_is_human_readable():
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("AudioMind Topic Title Generation Tests")
+    print("LEXARA Topic Title Generation Tests")
     print("=" * 60)
     
     test_title_word_limit()

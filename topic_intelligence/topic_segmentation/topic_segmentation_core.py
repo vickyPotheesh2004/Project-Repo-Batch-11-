@@ -30,7 +30,7 @@ EMBED_MODEL = "all-MiniLM-L6-v2"
 SIM_THRESHOLD = 0.82
 MIN_DEF_SENTENCES = 2
 MAX_SENTENCES_PER_TOPIC = 10
-PROJECT_TITLE = "AudioMind: Automated Podcast Transcription & Insights"
+PROJECT_TITLE = "LEXARA: Automated Podcast Transcription & Insights"
 
 embedder = SentenceTransformer(EMBED_MODEL)
 
@@ -215,7 +215,7 @@ def main(input_path):
 
     output_path = input_path.parent / "segmented_output.json"
     
-    # Format output according to AudioMind schema
+    # Format output according to LEXARA schema
     output_data = {
         "Project_Title": PROJECT_TITLE,
         "audio_file": data["audio_file"],
@@ -241,7 +241,7 @@ def main(input_path):
             ensure_ascii=False
         )
 
-    print(f"[SUCCESS] AudioMind topic segmentation completed: {output_path}")
+    print(f"[SUCCESS] LEXARA topic segmentation completed: {output_path}")
     print(f"[INFO] Generated {len(topics)} topics with titles and animation states")
 
 

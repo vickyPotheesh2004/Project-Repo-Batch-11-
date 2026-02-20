@@ -109,7 +109,7 @@ def load_config():
 CONFIG = load_config()
 
 st.set_page_config(
-    page_title="AudioMind",
+    page_title="LEXARA",
     page_icon="🎧",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -488,6 +488,41 @@ st.markdown("""
         background: #1976d2 !important;
     }
 
+    /* === EXPAND/COLLAPSE SYMBOL REPLACEMENT === */
+    /* Hide ALL default Streamlit expander icons (SVG, Material Icons text, icon spans) */
+    [data-testid="stExpander"] summary svg,
+    [data-testid="stExpander"] summary [data-testid="stIconMaterial"],
+    [data-testid="stExpander"] summary .material-icons,
+    [data-testid="stExpander"] summary [class*="icon"],
+    [data-testid="stExpander"] details summary svg,
+    [data-testid="stExpander"] header svg,
+    [data-testid="stExpanderToggleIcon"] {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        font-size: 0 !important;
+    }
+    
+    /* Inject ▼ for expanded state */
+    [data-testid="stExpander"][open] summary::before,
+    details[open] > summary::before {
+        content: "▼ " !important;
+        font-size: 0.9rem;
+        margin-right: 0.25rem;
+        font-family: sans-serif !important;
+    }
+    
+    /* Inject ▶ for collapsed state */
+    [data-testid="stExpander"]:not([open]) summary::before,
+    details:not([open]) > summary::before {
+        content: "▶ " !important;
+        font-size: 0.9rem;
+        margin-right: 0.25rem;
+        font-family: sans-serif !important;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -505,7 +540,7 @@ LANGUAGES = {
     "Russian": "ru",
 }
 
-st.markdown('<div class="main-header">🎧 AudioMind</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">🎧 LEXARA</div>', unsafe_allow_html=True)
 st.markdown(
     '<div class="sub-header">Automated Podcast Transcription & Insights | 3D Visualization | Multi-Language Support</div>',
     unsafe_allow_html=True
@@ -986,7 +1021,7 @@ for idx, topic in enumerate(topics):
     topic_start = topic.get("start", 0)
     topic_end = topic.get("end", 0)
     topic_duration = topic_end - topic_start
-    # Get topic title (new AudioMind feature)
+    # Get topic title (new LEXARA feature)
     topic_title = topic.get('topic_title', f'Topic {topic_display_id}')
     topic_summary = topic.get('summary', 'No summary available')
     
@@ -1148,7 +1183,7 @@ if st.button("Romanize Translations", type="primary"):
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; padding: 2rem; color: #666666;">
-    <p><strong>🎧 AudioMind</strong>: Automated Podcast Transcription & Insights</p>
+    <p><strong>🎧 LEXARA</strong>: Automated Podcast Transcription & Insights</p>
     <p style="font-size: 0.875rem;">Powered by Whisper | Transformers | Three.js | Streamlit</p>
 </div>
 """, unsafe_allow_html=True)

@@ -1,4 +1,4 @@
-# AudioMind: Automated Podcast Transcription & Insights - Documentation Report
+# LEXARA: Automated Podcast Transcription & Insights - Documentation Report
 
 ## 1. Project Overview
 
@@ -6,7 +6,7 @@
 Raw audio content, such as podcasts and lectures, is unstructured and difficult to navigate. Users often struggle to find specific information without listening to the entire file. Language barriers further restrict access to valuable content for non-native speakers.
 
 ### Objectives
-The primary objective of AudioMind is to transform raw audio into structured, actionable insights. Key goals include:
+The primary objective of LEXARA is to transform raw audio into structured, actionable insights. Key goals include:
 *   **Automated Transcription**: Converting speech to text with high accuracy.
 *   **Intelligent Segmentation**: Dividing long audio into coherent, topic-based segments.
 *   **Content Summarization**: Generating concise summaries and context-aware titles for each segment.
@@ -43,7 +43,7 @@ The testing dataset includes 5 distinct samples:
 
 ## 3. System Architecture
 
-The AudioMind system follows a linear pipeline architecture, transforming raw audio into an interactive web interface.
+The LEXARA system follows a linear pipeline architecture, transforming raw audio into an interactive web interface.
 
 ```mermaid
 graph LR
