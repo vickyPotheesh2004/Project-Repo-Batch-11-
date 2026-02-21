@@ -1185,5 +1185,8 @@ st.markdown("""
 <div style="text-align: center; padding: 2rem; color: #666666;">
     <p><strong>🎧 LEXARA</strong>: Automated Podcast Transcription & Insights</p>
     <p style="font-size: 0.875rem;">Powered by Whisper | Transformers | Three.js | Streamlit</p>
+    <p style="font-size: 0.75rem; margin-top: 0.5rem;">
+        © 2026 / Author: Potheesh Vignesh K.™
+    </p>
 </div>
 """, unsafe_allow_html=True)
